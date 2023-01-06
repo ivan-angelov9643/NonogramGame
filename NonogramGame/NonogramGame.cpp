@@ -15,6 +15,8 @@ map<char*, char*> loadProfiles(map<char*, char*>);
 bool compareHashes(char*, char*);
 bool isValid(char*, const char*);
 char* hashPass(char*);
+char* notLoggedIn(bool&, bool&);
+void loggedIn(bool&, char*);
 
 const int SIZE = 5;
 const int INPUT_SIZE = 101;
@@ -27,6 +29,65 @@ const char* PROFILES_FILE_NAME = "profiles.txt";
 //delete arrays !!!!
 int main()
 {
+	bool isLoggedIn = false;
+	bool exit = false;
+	//bool logout = false;
+	char* currentUser = nullptr;
+	while (true)
+	{
+		if (exit)
+		{
+			delete[] currentUser;
+			return 0;
+		}
+		if (!isLoggedIn)
+		{
+			currentUser = notLoggedIn(isLoggedIn, exit);
+		}
+		else 
+		{
+			loggedIn(isLoggedIn, currentUser);
+		}
+	}
+	
+	
+}
+
+void loggedIn(bool& loggedIn, char* currentUser) {
+	char* choice = new char[INPUT_SIZE];
+	cout << "Welcome " << currentUser << "!" << endl;
+	while (true)
+	{
+		if (!loggedIn) break;
+		cout << "0 - Logout" << endl;
+		cout << "1 - New game" << endl;
+		cout << "2 - Continue game" << endl;
+		cout << "3 - Save progress" << endl;
+		cin >> choice;
+		switch (choice[0])
+		{
+		case '0':
+			cout << "Logging out" << endl;
+			loggedIn = false;
+			break;
+		case '1':
+			//new game
+			break;
+		case '2':
+			// continue game 
+			break;
+		case '3':
+			// continue game 
+			break;
+		default:
+			cout << "No such choice" << endl;
+			break;
+		}
+	}
+	delete[] choice;
+}
+
+char* notLoggedIn(bool& loggedIn, bool& exit) {
 	cout << "Welcome to Nonogram!" << endl;
 	map<char*, char*> profiles;
 	profiles = loadProfiles(profiles);
@@ -34,11 +95,17 @@ int main()
 	bool success = false;
 	char* currentUser = nullptr;
 	while (!success) {
+		if (exit) break;
+		cout << "0 - Exit" << endl;
 		cout << "1 - Register" << endl;
 		cout << "2 - Login" << endl;
 		cin >> choice;
 		switch (choice[0])
 		{
+		case '0':
+			cout << "Closing game" << endl;
+			exit = true;
+			break;
 		case '1':
 			success = registerProfile(profiles, &currentUser);
 			break;
@@ -50,7 +117,9 @@ int main()
 			break;
 		}
 	}
-	cout << "Welcome " << currentUser << "!" << endl;
+	loggedIn = true;
+	delete[] choice;
+	return currentUser;
 }
 
 bool registerProfile(map<char*, char*> profiles, char** currentUser) {
@@ -63,8 +132,9 @@ bool registerProfile(map<char*, char*> profiles, char** currentUser) {
 
 		cout << "Enter username: ";
 		cin >> username;
-		if (username[0] == '0' && username[1] == 0)
-		{
+		if (username[0] == '0' && username[1] == 0) {
+			delete[] username;
+			delete[] password;
 			return false;
 		}
 		if (!isValid(username, "Username")) continue;
@@ -107,12 +177,12 @@ bool loginProfile(map<char*, char*> profiles, char** currentUser) {
 		cout << "0 - back" << endl;
 		cout << "Enter username: ";
 		cin >> username;
-
-		if (username[0] == '0' && username[1] == 0)
+		if (username[0] == '0' && username[1] == 0) 
 		{
+			delete[] username;
+			delete[] password;
 			return false;
 		}
-
 		if (!usernameExists(profiles, username, stringSize(username), &usernamesPasswordHash))
 		{
 			cout << "Username doesn't exist" << endl;
@@ -123,7 +193,6 @@ bool loginProfile(map<char*, char*> profiles, char** currentUser) {
 		cin >> password;
 
 		char* currentPasswordHash = hashPass(password);
-
 		if (!compareHashes(currentPasswordHash, usernamesPasswordHash))
 		{
 			cout << "Wrong password" << endl;
@@ -131,7 +200,6 @@ bool loginProfile(map<char*, char*> profiles, char** currentUser) {
 		}
 		*currentUser = username;
 		delete[] password;
-		delete[] usernamesPasswordHash;
 		return true;
 	}
 }
