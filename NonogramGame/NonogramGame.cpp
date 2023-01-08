@@ -38,7 +38,7 @@ void loggedIn(bool& loggedIn, char* user) {
 	bool gameFinished;
 	bool won;
 	int lives;
-	char* fileName;
+	char* fileName = nullptr;
 	int userLvl = userLevel(user);
 	while (true)
 	{
@@ -66,11 +66,16 @@ void loggedIn(bool& loggedIn, char* user) {
 			}
 			break;
 		case '2':
-			// continue game
+			inGamePicture = continueGame(user, gameFinished, won, lives);
+			if (gameFinished) {
+				deleteLastGameSave(user);
+				if (won) levelUp(user);
+				inGamePicture = nullptr;
+			}
 			break;
 		case '3':
 			if (inGamePicture == nullptr) cout << "There's no current game to save" << endl;
-			else saveLastGame(user, inGamePicture, lives);
+			else saveLastGame(user, fileName, inGamePicture, lives);
 			break;
 		default:
 			cout << "No such choice" << endl;
@@ -80,24 +85,48 @@ void loggedIn(bool& loggedIn, char* user) {
 	delete[] choice;
 }
 
-void saveLastGame(char* user, char** inGamePicture, int lives) {
-	int size = stringSize(inGamePicture[0]);
-
-	fstream userLastGameFile;
-	userLastGameFile.open(string(user) + "LastGame.txt", fstream::out);
-	if (!userLastGameFile.is_open()) {
-		cout << "Could not create file." << endl;
-		return;
+char** continueGame(char* user, bool& gameFinished, bool& won, int& lives) {
+	int** rows = new int* [SIZE];
+	int** cols = new int* [SIZE];
+	char** solvedPicture = new char* [SIZE];
+	char** inGamePicture = new char* [SIZE];
+	for (int i = 0; i < SIZE; i++)
+	{
+		rows[i] = new int[SIZE] {0};
+		cols[i] = new int[SIZE] {0};
+		solvedPicture[i] = new char[SIZE + 1] {0};
+		inGamePicture[i] = new char[SIZE + 1] {0};
 	}
-	userLastGameFile << size / 5 << endl;
-	userLastGameFile << lives << endl;
+	fstream userLastGameFile;
+	userLastGameFile.open(string(user) + "LastGame.txt", fstream::in);
+	if (!userLastGameFile.is_open())
+	{
+		cout << "There is no last game save" << endl;
+		return nullptr;
+	}
+	char* buffer = new char[LINE_SIZE] {0};
+	userLastGameFile.getline(buffer, LINE_SIZE);
+	char* fileName = new char[LINE_SIZE] {0};
+	for (int i = 0; i < LINE_SIZE; i++)
+	{
+		if (buffer[i] == 0) break;
+		fileName[i] = buffer[i];
+	}
+	userLastGameFile.getline(buffer, LINE_SIZE);
+	int size = stringSize(buffer) == 1 ? buffer[0] - '0' : ((buffer[0] - '0') * 10 + (buffer[1] - '0'));
+	userLastGameFile.getline(buffer, LINE_SIZE);
+	lives = buffer[0] - '0';
 	for (int i = 0; i < size; i++)
 	{
-		userLastGameFile << inGamePicture[i] << endl;
+		userLastGameFile.getline(buffer, LINE_SIZE);
+		for (int j = 0; j < size; j++)
+		{
+			inGamePicture[i][j] = buffer[j];
+		}
 	}
-
-	userLastGameFile.close();
-	cout << "Game saved successfully" << endl;
+	readPictureFile(rows, cols, solvedPicture, size, fileName);
+	Play(user, solvedPicture, inGamePicture, rows, cols, size, gameFinished, won, lives);
+	return inGamePicture;
 }
 
 char** newGame(char* user, int userLvl, char* fileName, bool& gameFinished, bool& won, int& lives)
@@ -134,7 +163,10 @@ void Play(char* user, char** solvedPicture, char** inGamePicture, int** rows, in
 	while (!gameFinished)
 	{
 		printPicture(inGamePicture, rows, cols, size);
-		if (won) break;
+		if (won) {
+			gameFinished = true;
+			break;
+		}
 		cin >> action;
 		if (action == '0') return;
 		cin >> i >> j;
@@ -158,14 +190,6 @@ void Play(char* user, char** solvedPicture, char** inGamePicture, int** rows, in
 	}
 	if (!won) cout << "Game Over!" << endl;
 	if (won) cout << "You won!" << endl;
-}
-
-void deleteLastGameSave(char* user) {
-	std::fstream userLastGameFile(string(user) + "LastGame.txt", fstream::in);
-	if (userLastGameFile) {
-		userLastGameFile.close();
-		remove((string(user) + "LastGame.txt").c_str());
-	}
 }
 
 void MarkRowAndColIfFilled(int i, int j, char** solvedPicture, char** inGamePicture, int size, bool& markRow, bool& markCol) {

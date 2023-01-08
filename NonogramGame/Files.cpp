@@ -88,3 +88,33 @@ void levelUp(char* user) {
 	userLvlFile.trunc;
 	userLvlFile << userLvl + 1 << endl;
 }
+
+void saveLastGame(char* user, char* gameFileName, char** inGamePicture, int lives) {
+	int size = stringSize(inGamePicture[0]);
+
+	fstream userLastGameFile;
+	userLastGameFile.open(string(user) + "LastGame.txt", fstream::out);
+	if (!userLastGameFile.is_open()) {
+		cout << "Could not create file." << endl;
+		return;
+	}
+	userLastGameFile << gameFileName << endl;
+	userLastGameFile << size << endl;
+	userLastGameFile << lives << endl;
+	for (int i = 0; i < size; i++)
+	{
+		userLastGameFile << inGamePicture[i] << endl;
+	}
+
+	userLastGameFile.close();
+	cout << "Game saved successfully" << endl;
+}
+
+void deleteLastGameSave(char* user) {
+	std::fstream userLastGameFile(string(user) + "LastGame.txt", fstream::in);
+	if (userLastGameFile) {
+		userLastGameFile.close();
+		remove((string(user) + "LastGame.txt").c_str());
+	}
+}
+

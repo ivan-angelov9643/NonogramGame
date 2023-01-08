@@ -33,9 +33,9 @@ extern void Play(char*, char**, char**, int**, int**, int, bool&, bool&, int&);
 extern bool ValidateInput(char, int, int, int);
 extern void MarkRowAndColIfFilled(int, int, char**, char**, int, bool&, bool&);
 extern void levelUp(char*);
-extern void saveLastGame(char*, char**, int);
+extern void saveLastGame(char*, char*, char**, int);
 extern void deleteLastGameSave(char*);
-
+extern char** continueGame(char*, bool&, bool&, int&);
 
 
 
