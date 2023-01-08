@@ -2,67 +2,48 @@
 #include <fstream>
 #include <string>
 #include <map>
+#include "Header.h"
+#include <set>
 
 using namespace std;
-
-void readPictureFile(int**, int**, char**, int, const char*);
-void printPicture(char**, int);
-bool registerProfile(map<char*, char*>, char**);
-bool loginProfile(map<char*, char*>, char**);
-bool usernameExists(map<char*, char*>, char*, int, char**);
-int stringSize(char* str);
-map<char*, char*> loadProfiles(map<char*, char*>);
-bool compareHashes(char*, char*);
-bool isValid(char*, const char*);
-char* hashPass(char*);
-char* notLoggedIn(bool&, bool&);
-void loggedIn(bool&, char*);
-
-const int SIZE = 5;
-const int INPUT_SIZE = 101;
-const int LINE_SIZE = 256;
-const int MAX_USERNAME_AND_PASSWORD_SIZE = 25;
-const int MIN_USERNAME_AND_PASSWORD_SIZE = 3;
-const int HASH_SIZE = 30;
-const char* PROFILES_FILE_NAME = "profiles.txt";
 
 //delete arrays !!!!
 int main()
 {
 	bool isLoggedIn = false;
 	bool exit = false;
-	//bool logout = false;
-	char* currentUser = nullptr;
+	char* user = nullptr;
 	while (true)
 	{
 		if (exit)
 		{
-			delete[] currentUser;
+			delete[] user;
 			return 0;
 		}
 		if (!isLoggedIn)
 		{
-			currentUser = notLoggedIn(isLoggedIn, exit);
+			user = notLoggedIn(isLoggedIn, exit);
 		}
-		else 
+		else
 		{
-			loggedIn(isLoggedIn, currentUser);
+			loggedIn(isLoggedIn, user);
 		}
 	}
-	
-	
 }
 
 void loggedIn(bool& loggedIn, char* currentUser) {
 	char* choice = new char[INPUT_SIZE];
 	cout << "Welcome " << currentUser << "!" << endl;
+	char** inGamePicture = nullptr;
+	bool gameFinished = false;
+	bool won = false;
 	while (true)
 	{
 		if (!loggedIn) break;
 		cout << "0 - Logout" << endl;
 		cout << "1 - New game" << endl;
 		cout << "2 - Continue game" << endl;
-		cout << "3 - Save progress" << endl;
+		cout << "3 - Save game" << endl;
 		cin >> choice;
 		switch (choice[0])
 		{
@@ -71,13 +52,17 @@ void loggedIn(bool& loggedIn, char* currentUser) {
 			loggedIn = false;
 			break;
 		case '1':
-			//new game
+			inGamePicture = newGame(currentUser, gameFinished, won);
+			if (gameFinished) inGamePicture = nullptr;
 			break;
 		case '2':
-			// continue game 
+			// continue game
 			break;
 		case '3':
-			// continue game 
+			if (inGamePicture == nullptr) cout << "There's no current game to save" << endl;
+			//else {
+			//	//save
+			//}
 			break;
 		default:
 			cout << "No such choice" << endl;
@@ -87,13 +72,156 @@ void loggedIn(bool& loggedIn, char* currentUser) {
 	delete[] choice;
 }
 
+bool ValidateInput(char action, int i, int j, int size) {
+	if (action != 'f' && action != 'e')
+	{
+		cout << "Action must be \'a\' or \'e\'";
+	}
+	if (i < 0 || i >= size || j < 0 || j >= size)
+	{
+		cout << "Coordinates must be >= 0 and < " << size << endl;
+		return false;
+	}
+	return true;
+}
+
+void Play(char** solvedPicture, char** inGamePicture, int** rows, int** cols,
+	int size, bool& gameFinished, bool& won) {
+	cout << "f i j - fill cell with coordinates (i, j)" << endl;
+	cout << "e i j - empty cell with coordinates (i, j)" << endl;
+	cout << "0 - back" << endl;
+	int i, j;
+	char action;
+	int lives = LIVES;
+	set<int> markedRows = {};
+	//set<int> markedCols = {};
+	while (!gameFinished)
+	{
+		printPicture(inGamePicture, rows, cols, size);
+		if (won) break;
+		cin >> action;
+		if (action == '0') return;
+		cin >> i >> j;
+		if (!ValidateInput(action, i, j, size)) continue;
+		if (action == 'f' && solvedPicture[i][j] == '.' || action == 'e' && solvedPicture[i][j] == '#')
+		{
+			cout << "Wrong!" << endl;
+			lives -= 1;
+			cout << "Lives remaining: " << lives << endl;
+			if (lives == 0) {
+				gameFinished = true;
+				break;
+			}
+		}
+		inGamePicture[i][j] = solvedPicture[i][j];
+		bool markRow = true;
+		bool markCol = true;
+		MarkRowAndColIfFilled(i, j, solvedPicture, inGamePicture, size, markRow, markCol);
+		if (markRow) markedRows.insert(i);
+		//if (markCol) markedCols.insert(i);
+		if (markedRows.size() == size) won = true;
+	}
+	if (!won) cout << "Game Over!" << endl;
+	if (won) cout << "You won!" << endl;
+}
+
+void MarkRowAndColIfFilled(int i, int j, char** solvedPicture, char** inGamePicture, int size, bool& markRow,  bool& markCol) {
+	for (int k = 0; k < size; k++)
+	{
+		if (solvedPicture[i][k] == '#' && inGamePicture[i][k] != '#') markRow = false;
+		if (solvedPicture[k][j] == '#' && inGamePicture[k][j] != '#') markCol = false;
+	}
+	if (markRow || markCol)
+	{
+		for (int k = 0; k < size; k++)
+		{
+			if (markRow) inGamePicture[i][k] = solvedPicture[i][k];
+			if (markCol) inGamePicture[k][j] = solvedPicture[k][j];
+		}
+	}
+}
+
+char** newGame(char* user, bool& gameFinished, bool& won)
+{
+	int userLvl = userLevel(user);
+	cout << user << ", your level is " << userLvl << endl;
+
+	char* fileName = choosePictureFile(userLvl);
+	int** rows = new int* [SIZE];
+	int** cols = new int* [SIZE];
+	char** solvedPicture = new char* [SIZE];
+	char** inGamePicture = new char* [SIZE];
+	int size = userLvl * 5;
+	for (int i = 0; i < SIZE; i++)
+	{
+		rows[i] = new int[SIZE] {0};
+		cols[i] = new int[SIZE] {0};
+		solvedPicture[i] = new char[SIZE + 1] {0};
+		inGamePicture[i] = new char[SIZE + 1] {0};
+	}
+	readPictureFile(rows, cols, solvedPicture, size, fileName);
+	fillInGamePicture(inGamePicture, size);
+	Play(solvedPicture, inGamePicture, rows, cols, size, gameFinished, won);
+	return inGamePicture;
+}
+
+int maxSubarraySize(int** arr, int size) {
+	int maxSize = 0;
+	for (int i = 0; i < size; i++)
+	{
+		int currentSize = 0;
+		for (int j = 0; j < size; j++)
+		{
+			if (arr[i][j] == 0) {
+				currentSize = j;
+				break;
+			}
+		}
+		if (currentSize > maxSize) maxSize = currentSize;
+	}
+	return maxSize;
+}
+
+void printPicture(char** picture, int** rows, int** cols, int size) {
+	int maxSizeRow = maxSubarraySize(rows, size);
+	int maxSizeCol = maxSubarraySize(cols, size);
+	for (int i = maxSizeCol - 1; i >= 0; i--)
+	{
+		for (int i = 0; i < maxSizeRow + 3; i++) cout << ' ';
+		for (int j = 0; j < size; j++)
+		{
+			if (cols[j][i] == 0) cout << ' ';
+			else cout << cols[j][i];
+		}
+		cout << endl;
+	}
+	cout << endl;
+	for (int i = 0; i < maxSizeRow + 3; i++) cout << ' ';
+	for (int i = 0; i < size; i++) cout << i;
+	cout << endl;
+	for (int i = 0; i < size; i++)
+	{
+		for (int j = maxSizeRow - 1; j >= 0; j--)
+		{
+			if (rows[i][j] == 0) cout << ' ';
+			else cout << rows[i][j];
+		}
+		cout << ' ' << i << ' ';
+		for (int j = 0; j < size; j++)
+		{
+			cout << picture[i][j];
+		}
+		cout << endl;
+	}
+}
+
 char* notLoggedIn(bool& loggedIn, bool& exit) {
 	cout << "Welcome to Nonogram!" << endl;
 	map<char*, char*> profiles;
 	profiles = loadProfiles(profiles);
 	char* choice = new char[INPUT_SIZE];
 	bool success = false;
-	char* currentUser = nullptr;
+	char* user = nullptr;
 	while (!success) {
 		if (exit) break;
 		cout << "0 - Exit" << endl;
@@ -107,10 +235,10 @@ char* notLoggedIn(bool& loggedIn, bool& exit) {
 			exit = true;
 			break;
 		case '1':
-			success = registerProfile(profiles, &currentUser);
+			success = registerProfile(profiles, &user);
 			break;
 		case '2':
-			success = loginProfile(profiles, &currentUser);
+			success = loginProfile(profiles, &user);
 			break;
 		default:
 			cout << "No such choice" << endl;
@@ -119,289 +247,23 @@ char* notLoggedIn(bool& loggedIn, bool& exit) {
 	}
 	loggedIn = true;
 	delete[] choice;
-	return currentUser;
+	return user;
 }
 
-bool registerProfile(map<char*, char*> profiles, char** currentUser) {
-	while (true) {
-		char* username = new char[INPUT_SIZE];
-		char* password = new char[INPUT_SIZE];
-
-		cout << "---Register---" << endl;
-		cout << "0 - back" << endl;
-
-		cout << "Enter username: ";
-		cin >> username;
-		if (username[0] == '0' && username[1] == 0) {
-			delete[] username;
-			delete[] password;
-			return false;
-		}
-		if (!isValid(username, "Username")) continue;
-		if (usernameExists(profiles, username, stringSize(username), nullptr))
-		{
-			cout << "Username already exists" << endl;
-			continue;
-		}
-
-		cout << "Enter password: ";
-		cin >> password;
-		if (!isValid(password, "Password")) continue;
-
-
-		fstream profilesFile;
-		profilesFile.open(PROFILES_FILE_NAME, fstream::out | fstream::app);
-
-		if (!profilesFile.is_open())
-		{
-			cout << "Error opening file" << endl;
-			return false;
-		}
-
-		profilesFile << username << ":" << hashPass(password) << endl;
-		profilesFile.close();
-
-		*currentUser = username;
-		delete[] password;
-		return true;
-	}
-}
-
-bool loginProfile(map<char*, char*> profiles, char** currentUser) {
-	while (true) {
-		char* username = new char[INPUT_SIZE] {0};
-		char* password = new char[INPUT_SIZE] {0};
-		char* usernamesPasswordHash;
-
-		cout << "---Login---" << endl;
-		cout << "0 - back" << endl;
-		cout << "Enter username: ";
-		cin >> username;
-		if (username[0] == '0' && username[1] == 0) 
-		{
-			delete[] username;
-			delete[] password;
-			return false;
-		}
-		if (!usernameExists(profiles, username, stringSize(username), &usernamesPasswordHash))
-		{
-			cout << "Username doesn't exist" << endl;
-			continue;
-		}
-
-		cout << "Enter password: ";
-		cin >> password;
-
-		char* currentPasswordHash = hashPass(password);
-		if (!compareHashes(currentPasswordHash, usernamesPasswordHash))
-		{
-			cout << "Wrong password" << endl;
-			continue;
-		}
-		*currentUser = username;
-		delete[] password;
-		return true;
-	}
-}
-
-bool usernameExists(map<char*, char*> profiles, char* username, int size, char** passwordHash) {
-	map<char*, char*>::iterator it;
-
-	bool exists;
-	for (it = profiles.begin(); it != profiles.end(); it++)
-	{
-		char* currentUsername = it->first;
-		int currentUsernameSize = stringSize(currentUsername);
-		int biggerSize = size > currentUsernameSize ? size : currentUsernameSize;
-		exists = true;
-		for (int i = 0; i < biggerSize; i++)
-		{
-			if (currentUsername[i] != username[i]) {
-				exists = false;
-				break;
-			}
-		}
-		if (exists)
-		{
-			if (passwordHash != nullptr) *passwordHash = it->second;
-			return true;
-		}
-	}
-	return false;
-}
-
-bool isValid(char* str, const char* title) {
-	int size = stringSize(str);
-	if (size > MAX_USERNAME_AND_PASSWORD_SIZE)
-	{
-		cout << title << " size must be maximum " << MAX_USERNAME_AND_PASSWORD_SIZE << " characters" << endl;
-		return false;
-	}
-	if (size < MIN_USERNAME_AND_PASSWORD_SIZE)
-	{
-		cout << title << " size must be minimum " << MIN_USERNAME_AND_PASSWORD_SIZE << " characters" << endl;
-		return false;
-	}
-	for (int i = 0; i < size; i++)
-	{
-		if (!(str[i] >= '0' && str[i] <= '9' ||
-			str[i] >= 'A' && str[i] <= 'Z' ||
-			str[i] >= 'a' && str[i] <= 'z' ||
-			str[i] == '.' || str[i] == '_'))
-		{
-			cout << title << " can contain only letters, digits, dots (.) and underscores (_)" << endl;
-			return false;
-		}
-	}
-	return true;
-}
-
-map<char*, char*> loadProfiles(map<char*, char*> profiles) {
-	fstream profilesFile;
-	profilesFile.open(PROFILES_FILE_NAME, std::fstream::in);
-
-	if (!profilesFile.is_open()) {
-		cout << "Error opening file" << endl;
-		return profiles;
-	}
-
-	char* buffer = new char[LINE_SIZE] {0};
-	int i, j;
-	while (profilesFile.getline(buffer, LINE_SIZE)) {
-		i = 0;
-		j = 0;
-		char* username = new char[INPUT_SIZE] {0};
-		char* passwordHash = new char[INPUT_SIZE] {0};
-		while (buffer[i] != 0 && buffer[i] != ':') {
-			username[j++] = buffer[i++];
-		}
-		j = 0;
-		i++;
-		while (buffer[i] != 0) {
-			passwordHash[j++] = buffer[i++];
-		}
-		profiles[username] = passwordHash;
-	}
-	delete[] buffer;
-	return profiles;
-}
-
-int stringSize(char* str) {
-	int i = 0;
-	while (str[i] != '\0') i++;
-	return i;
-}
-
-void Test() {
-	const char* fileName = "5x5picture1.txt";
-	int** rows = new int* [SIZE];
-	int** cols = new int* [SIZE];
-	char** picture = new char* [SIZE];
-	for (int i = 0; i < SIZE; i++)
-	{
-		rows[i] = new int[SIZE] {0};
-		cols[i] = new int[SIZE] {0};
-		picture[i] = new char[SIZE + 1] {0};
-	}
-	readPictureFile(rows, cols, picture, 5, fileName);
-	cout << "Rows:" << endl;
-	for (int i = 0; i < SIZE; i++)
-	{
-		for (int j = 0; j < SIZE; j++)
-		{
-			cout << rows[i][j] << " ";
-		}
-		cout << endl;
-	}
-	cout << "Cols:" << endl;
-	for (int i = 0; i < SIZE; i++)
-	{
-		for (int j = 0; j < SIZE; j++)
-		{
-			cout << cols[i][j] << " ";
-		}
-		cout << endl;
-	}
-	cout << "Picture:" << endl;
-	printPicture(picture, SIZE);
-}
-
-void printPicture(char** picture, int size) {
+void fillInGamePicture(char** picture, int size) {
 	for (int i = 0; i < size; i++)
 	{
 		for (int j = 0; j < size; j++)
 		{
-			cout << picture[i][j];
+			picture[i][j] = '*';
 		}
-		cout << endl;
 	}
 }
 
-//http://www.cse.yorku.ca/~oz/hash.html
-char* hashPass(char* s) {
-	size_t h = 5381;
-	int c;
-	while (c = *s++) h = ((h << 5) + h) + c;
-	string temp = to_string(h);
-	char* hash = new char[HASH_SIZE] {0};
-	for (int i = 0; i < temp.size(); i++) hash[i] = temp[i];
-	return hash;
-}
-
-void readPictureFile(int** rows, int** cols, char** picture, int pictureSize, const char* fileName) {
-	fstream pictureFile;
-	pictureFile.open(fileName, fstream::in);
-
-	if (!pictureFile.is_open())
-	{
-		cout << "Error opening file" << endl;
-		return;
-	}
-
-	for (int i = 0; i < pictureSize; i++)
-	{
-		pictureFile >> picture[i];
-	}
-
-	int i = 0;
-	int j = 0;
-	int numbersPerLineCount = 0;
-	int linesCount = 0;
-	int currentNumber = 0;
-	int** currentArray = rows;
-
-	while (linesCount <= pictureSize * 2) {
-		if (linesCount == pictureSize + 1)
-		{
-			i = 0;
-			j = 0;
-			currentArray = cols;
-		}
-		if (numbersPerLineCount == 0)
-		{
-			pictureFile >> numbersPerLineCount;
-			i = linesCount++ % pictureSize;
-			j = 0;
-		}
-		else
-		{
-			pictureFile >> currentNumber;
-			currentArray[i][j] = currentNumber;
-			//cout << "arr[" << i << "][" << j << "] = " << currentNumber << endl;
-			numbersPerLineCount--;
-			j++;
-		}
-	}
-	pictureFile.close();
-}
-
-
-bool compareHashes(char* hash1, char* hash2) {
-	for (int i = 0; i < HASH_SIZE; i++)
-	{
-		if (hash1[i] != hash2[i]) return false;
-	}
-	return true;
+char* choosePictureFile(int lvl) {
+	int ind = rand() % 2;
+	return PICTURES_FILES_NAMES.at(1)[0];
+	//return PICTURES_FILES_NAMES.at(lvl)[ind];
 }
 
 
