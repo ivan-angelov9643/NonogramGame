@@ -25,11 +25,17 @@ extern int stringSize(char* str);
 extern void printPicture(char**, int**, int**, int);
 extern char* notLoggedIn(bool&, bool&);
 extern void loggedIn(bool&, char*);
-extern char** newGame(char*, bool&, bool&);
+extern char** newGame(char*, int, char*, bool&, bool&, int&);
 extern void fillInGamePicture(char**, int);
 extern char* choosePictureFile(int);
 extern int maxSubarraySize(int**, int);
-extern void Play(char**, char**, int**, int**, int, bool&, bool&);
+extern void Play(char*, char**, char**, int**, int**, int, bool&, bool&, int&);
 extern bool ValidateInput(char, int, int, int);
 extern void MarkRowAndColIfFilled(int, int, char**, char**, int, bool&, bool&);
+extern void levelUp(char*);
+extern void saveLastGame(char*, char**, int);
+extern void deleteLastGameSave(char*);
+
+
+
 

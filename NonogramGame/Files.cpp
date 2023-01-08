@@ -72,3 +72,19 @@ int userLevel(char* user) {
 	userLvlFile.close();
 	return userLvl;
 }
+
+void levelUp(char* user) {
+	int userLvl;
+	fstream userLvlFile;
+	userLvlFile.open(string(user) + "Lvl.txt", fstream::in | fstream::out);
+	if (!userLvlFile.is_open())
+	{
+		cout << "Error opening file" << endl;
+		return;
+	}
+	char* buffer = new char[LINE_SIZE] {0};
+	userLvlFile.getline(buffer, LINE_SIZE);
+	userLvl = buffer[0] - '0';
+	userLvlFile.trunc;
+	userLvlFile << userLvl + 1 << endl;
+}
