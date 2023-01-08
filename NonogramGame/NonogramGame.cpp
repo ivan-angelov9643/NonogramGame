@@ -33,13 +33,14 @@ int main()
 
 void loggedIn(bool& loggedIn, char* user) {
 	char* choice = new char[INPUT_SIZE];
-	cout << "Welcome " << user << "!" << endl;
 	char** inGamePicture = nullptr;
 	bool gameFinished;
 	bool won;
 	int lives;
 	char* fileName = nullptr;
 	int userLvl = userLevel(user);
+	cout << "Welcome " << user << "!" << endl;
+	cout << "You are lvl " << userLvl << endl;
 	while (true)
 	{
 		gameFinished = false;
@@ -61,21 +62,28 @@ void loggedIn(bool& loggedIn, char* user) {
 			fileName = choosePictureFile(userLvl);
 			inGamePicture = newGame(user, userLvl, fileName, gameFinished, won, lives);
 			if (gameFinished) {
-				if (won) levelUp(user);
+				if (won && userLevel(user) != 3) levelUp(user);
+				delete[] fileName;
+				delete[] inGamePicture;
 				inGamePicture = nullptr;
 			}
 			break;
 		case '2':
-			inGamePicture = continueGame(user, gameFinished, won, lives);
+			inGamePicture = continueGame(user, fileName, gameFinished, won, lives);
 			if (gameFinished) {
 				deleteLastGameSave(user);
-				if (won) levelUp(user);
+				if (won && userLevel(user) != 3) levelUp(user);
+				delete[] fileName;
+				delete[] inGamePicture;
 				inGamePicture = nullptr;
 			}
 			break;
 		case '3':
 			if (inGamePicture == nullptr) cout << "There's no current game to save" << endl;
-			else saveLastGame(user, fileName, inGamePicture, lives);
+			else {
+				saveLastGame(user, fileName, inGamePicture, lives);
+				delete[] fileName;
+			}
 			break;
 		default:
 			cout << "No such choice" << endl;
@@ -85,7 +93,7 @@ void loggedIn(bool& loggedIn, char* user) {
 	delete[] choice;
 }
 
-char** continueGame(char* user, bool& gameFinished, bool& won, int& lives) {
+char** continueGame(char* user, char*& fileName, bool& gameFinished, bool& won, int& lives) {
 	int** rows = new int* [SIZE];
 	int** cols = new int* [SIZE];
 	char** solvedPicture = new char* [SIZE];
@@ -106,7 +114,7 @@ char** continueGame(char* user, bool& gameFinished, bool& won, int& lives) {
 	}
 	char* buffer = new char[LINE_SIZE] {0};
 	userLastGameFile.getline(buffer, LINE_SIZE);
-	char* fileName = new char[LINE_SIZE] {0};
+	fileName = new char[LINE_SIZE] {0};
 	for (int i = 0; i < LINE_SIZE; i++)
 	{
 		if (buffer[i] == 0) break;
@@ -126,13 +134,21 @@ char** continueGame(char* user, bool& gameFinished, bool& won, int& lives) {
 	}
 	readPictureFile(rows, cols, solvedPicture, size, fileName);
 	Play(user, solvedPicture, inGamePicture, rows, cols, size, gameFinished, won, lives);
+	delete[] buffer;
+	for (int i = 0; i < SIZE; i++)
+	{
+		delete[] rows[i];
+		delete[] cols[i];
+		delete[] solvedPicture[i];
+	}
+	delete[] rows;
+	delete[] cols;
+	delete[] solvedPicture;
 	return inGamePicture;
 }
 
 char** newGame(char* user, int userLvl, char* fileName, bool& gameFinished, bool& won, int& lives)
 {
-	//cout << user << ", your level is " << userLvl << endl;
-
 	int** rows = new int* [SIZE];
 	int** cols = new int* [SIZE];
 	char** solvedPicture = new char* [SIZE];
@@ -149,6 +165,15 @@ char** newGame(char* user, int userLvl, char* fileName, bool& gameFinished, bool
 	fillInGamePicture(inGamePicture, size);
 	lives = LIVES;
 	Play(user, solvedPicture, inGamePicture, rows, cols, size, gameFinished, won, lives);
+	for (int i = 0; i < SIZE; i++)
+	{
+		delete[] rows[i];
+		delete[] cols[i];
+		delete[] solvedPicture[i];
+	}
+	delete[] rows;
+	delete[] cols;
+	delete[] solvedPicture;
 	return inGamePicture;
 }
 
@@ -213,7 +238,7 @@ void printPicture(char** picture, int** rows, int** cols, int size) {
 	int maxSizeCol = maxSubarraySize(cols, size);
 	for (int i = maxSizeCol - 1; i >= 0; i--)
 	{
-		for (int i = 0; i < maxSizeRow + 3; i++) cout << ' ';
+		for (int i = 0; i < maxSizeRow + 1; i++) cout << ' ';
 		for (int j = 0; j < size; j++)
 		{
 			if (cols[j][i] == 0) cout << ' ';
@@ -222,9 +247,6 @@ void printPicture(char** picture, int** rows, int** cols, int size) {
 		cout << endl;
 	}
 	cout << endl;
-	for (int i = 0; i < maxSizeRow + 3; i++) cout << ' ';
-	for (int i = 0; i < size; i++) cout << i;
-	cout << endl;
 	for (int i = 0; i < size; i++)
 	{
 		for (int j = maxSizeRow - 1; j >= 0; j--)
@@ -232,7 +254,7 @@ void printPicture(char** picture, int** rows, int** cols, int size) {
 			if (rows[i][j] == 0) cout << ' ';
 			else cout << rows[i][j];
 		}
-		cout << ' ' << i << ' ';
+		cout << ' ';
 		for (int j = 0; j < size; j++)
 		{
 			cout << picture[i][j];
@@ -271,7 +293,14 @@ char* notLoggedIn(bool& loggedIn, bool& exit) {
 			break;
 		}
 	}
-	loggedIn = true;
+	loggedIn = true; 
+
+	map<char*, char*>::iterator it;
+	for (it = profiles.begin(); it != profiles.end(); it++)
+	{
+		delete[] it->first;
+		delete[] it->second;
+	}
 	delete[] choice;
 	return user;
 }
@@ -301,8 +330,12 @@ void fillInGamePicture(char** picture, int size) {
 
 char* choosePictureFile(int lvl) {
 	int ind = rand() % 2;
-	return PICTURES_FILES_NAMES.at(1)[0];
-	//return PICTURES_FILES_NAMES.at(lvl)[ind];
+	char* fileName = new char[FILENAME_SIZE];
+	for (int i = 0; i < FILENAME_SIZE; i++)
+	{
+		fileName[i] = PICTURES_FILES_NAMES.at(lvl)[ind][i];
+	}
+	return fileName;
 }
 
 int maxSubarraySize(int** arr, int size) {

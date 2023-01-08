@@ -24,13 +24,5 @@ const map<int, char**> PICTURES_FILES_NAMES = {
    { 3, new char* [2] {
    new char[FILENAME_SIZE] { "15x15picture1.txt" },
    new char[FILENAME_SIZE] { "15x15picture2.txt" }
-   }},
-   { 4, new char* [2] {
-   new char[FILENAME_SIZE] { "20x20picture1.txt" },
-   new char[FILENAME_SIZE] { "20x20picture2.txt" }
-   }},
-   { 5, new char* [2] {
-   new char[FILENAME_SIZE] { "25x25picture1.txt" },
-   new char[FILENAME_SIZE] { "25x25picture2.txt" }
-   }},
+   }}
 };

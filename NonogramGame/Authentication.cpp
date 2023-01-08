@@ -36,7 +36,7 @@ map<char*, char*> loadProfiles(map<char*, char*> profiles) {
 	return profiles;
 }
 
-bool registerProfile(map<char*, char*> profiles, char** currentUser) {
+bool registerProfile(map<char*, char*> profiles, char** user) {
 	while (true) {
 		char* username = new char[INPUT_SIZE];
 		char* password = new char[INPUT_SIZE];
@@ -75,13 +75,13 @@ bool registerProfile(map<char*, char*> profiles, char** currentUser) {
 		profilesFile << username << ":" << hashPass(password) << endl;
 		profilesFile.close();
 
-		*currentUser = username;
+		*user = username;
 		delete[] password;
 		return true;
 	}
 }
 
-bool loginProfile(map<char*, char*> profiles, char** currentUser) {
+bool loginProfile(map<char*, char*> profiles, char** user) {
 	while (true) {
 		char* username = new char[INPUT_SIZE] {0};
 		char* password = new char[INPUT_SIZE] {0};
@@ -112,7 +112,7 @@ bool loginProfile(map<char*, char*> profiles, char** currentUser) {
 			cout << "Wrong password" << endl;
 			continue;
 		}
-		*currentUser = username;
+		*user = username;
 		delete[] password;
 		return true;
 	}

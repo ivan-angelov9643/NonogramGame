@@ -68,6 +68,7 @@ int userLevel(char* user) {
 		char* buffer = new char[LINE_SIZE] {0};
 		userLvlFile.getline(buffer, LINE_SIZE);
 		userLvl = buffer[0] - '0';
+		delete[] buffer;
 	}
 	userLvlFile.close();
 	return userLvl;
@@ -87,6 +88,7 @@ void levelUp(char* user) {
 	userLvl = buffer[0] - '0';
 	userLvlFile.trunc;
 	userLvlFile << userLvl + 1 << endl;
+	delete[] buffer;
 }
 
 void saveLastGame(char* user, char* gameFileName, char** inGamePicture, int lives) {
