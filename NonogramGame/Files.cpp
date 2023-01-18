@@ -1,8 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <map>
-#include "Header.h"
+#include "globals.h"
+#include "functions.h"
 
 using namespace std;
 
@@ -77,7 +77,7 @@ int userLevel(char* user) {
 void levelUp(char* user) {
 	int userLvl;
 	fstream userLvlFile;
-	userLvlFile.open(string(user) + "Lvl.txt", fstream::in | fstream::out);
+	userLvlFile.open(string(user) + "Lvl.txt", fstream::in);
 	if (!userLvlFile.is_open())
 	{
 		cout << "Error opening file" << endl;
@@ -86,8 +86,10 @@ void levelUp(char* user) {
 	char* buffer = new char[LINE_SIZE] {0};
 	userLvlFile.getline(buffer, LINE_SIZE);
 	userLvl = buffer[0] - '0';
-	userLvlFile.trunc;
+	userLvlFile.close();
+	userLvlFile.open(string(user) + "Lvl.txt", fstream::trunc | fstream::out);
 	userLvlFile << userLvl + 1 << endl;
+	userLvlFile.close();
 	delete[] buffer;
 }
 

@@ -1,97 +1,100 @@
 #include <iostream>
 #include <string>
-#include <map>
 #include <fstream>
-#include "Header.h"
+#include "globals.h"
+#include "functions.h"
 
 using namespace std;
 
-map<char*, char*> loadProfiles(map<char*, char*> profiles) {
+void loadProfiles(char*** profiles) {
 	fstream profilesFile;
 	profilesFile.open(PROFILES_FILE_NAME, std::fstream::in);
 
 	if (!profilesFile.is_open()) {
 		cout << "Error opening file" << endl;
-		return profiles;
+		return;
 	}
-
 	char* buffer = new char[LINE_SIZE] {0};
-	int i, j;
+	int i, j, profilesIndex = 0;
 	while (profilesFile.getline(buffer, LINE_SIZE)) {
 		i = 0;
 		j = 0;
 		char* username = new char[INPUT_SIZE] {0};
 		char* passwordHash = new char[INPUT_SIZE] {0};
 		while (buffer[i] != 0 && buffer[i] != ':') {
+			if (j == INPUT_SIZE - 1 || i == LINE_SIZE - 1)
+			{
+				break;
+			}
 			username[j++] = buffer[i++];
 		}
 		j = 0;
 		i++;
-		while (buffer[i] != 0) {
+		while (i != LINE_SIZE && buffer[i] != 0) {
+			if (j == INPUT_SIZE - 1 || i == LINE_SIZE - 1)
+			{
+				break;
+			}
 			passwordHash[j++] = buffer[i++];
 		}
-		profiles[username] = passwordHash;
+		profiles[profilesIndex][0] = username;
+		profiles[profilesIndex][1] = passwordHash;
+		profilesIndex++;
 	}
 	delete[] buffer;
-	return profiles;
 }
 
-bool registerProfile(map<char*, char*> profiles, char** user) {
+bool registerProfile(char*** profiles, char** user) {
 	while (true) {
 		char* username = new char[INPUT_SIZE];
 		char* password = new char[INPUT_SIZE];
-
 		cout << "---Register---" << endl;
 		cout << "0 - back" << endl;
-
 		cout << "Enter username: ";
 		cin >> username;
-		if (username[0] == '0' && username[1] == 0) {
+		if (INPUT_SIZE >= 2 && username[0] == '0' && username[1] == 0) {
 			delete[] username;
 			delete[] password;
 			return false;
 		}
-		if (!isValid(username, "Username")) continue;
+		if (!isValid(username, "Username")) {
+			continue;
+		}
 		if (usernameExists(profiles, username, stringSize(username), nullptr))
 		{
 			cout << "Username already exists" << endl;
 			continue;
 		}
-
 		cout << "Enter password: ";
 		cin >> password;
-		if (!isValid(password, "Password")) continue;
-
-
+		if (!isValid(password, "Password")) {
+			continue;
+		}
 		fstream profilesFile;
 		profilesFile.open(PROFILES_FILE_NAME, fstream::out | fstream::app);
-
 		if (!profilesFile.is_open())
 		{
 			cout << "Error opening file" << endl;
 			return false;
 		}
-
 		profilesFile << username << ":" << hashPass(password) << endl;
 		profilesFile.close();
-
 		*user = username;
 		delete[] password;
 		return true;
 	}
 }
 
-bool loginProfile(map<char*, char*> profiles, char** user) {
+bool loginProfile(char*** profiles, char** user) {
 	while (true) {
 		char* username = new char[INPUT_SIZE] {0};
 		char* password = new char[INPUT_SIZE] {0};
 		char* usernamesPasswordHash;
-
 		cout << "---Login---" << endl;
 		cout << "0 - back" << endl;
 		cout << "Enter username: ";
 		cin >> username;
-		if (username[0] == '0' && username[1] == 0)
+		if (INPUT_SIZE >= 2 && username[0] == '0' && username[1] == 0)
 		{
 			delete[] username;
 			delete[] password;
@@ -102,10 +105,8 @@ bool loginProfile(map<char*, char*> profiles, char** user) {
 			cout << "Username doesn't exist" << endl;
 			continue;
 		}
-
 		cout << "Enter password: ";
 		cin >> password;
-
 		char* currentPasswordHash = hashPass(password);
 		if (!compareHashes(currentPasswordHash, usernamesPasswordHash))
 		{
@@ -118,13 +119,11 @@ bool loginProfile(map<char*, char*> profiles, char** user) {
 	}
 }
 
-bool usernameExists(map<char*, char*> profiles, char* username, int size, char** passwordHash) {
-	map<char*, char*>::iterator it;
-
+bool usernameExists(char*** profiles, char* username, int size, char** passwordHash) {
 	bool exists;
-	for (it = profiles.begin(); it != profiles.end(); it++)
+	for (int i = 0; i < MAX_PROFILES; i++)
 	{
-		char* currentUsername = it->first;
+		char* currentUsername = profiles[i][0];
 		int currentUsernameSize = stringSize(currentUsername);
 		int biggerSize = size > currentUsernameSize ? size : currentUsernameSize;
 		exists = true;
@@ -137,7 +136,7 @@ bool usernameExists(map<char*, char*> profiles, char* username, int size, char**
 		}
 		if (exists)
 		{
-			if (passwordHash != nullptr) *passwordHash = it->second;
+			if (passwordHash != nullptr) *passwordHash = profiles[i][1];
 			return true;
 		}
 	}
@@ -174,10 +173,16 @@ bool isValid(char* str, const char* title) {
 char* hashPass(char* s) {
 	size_t h = 5381;
 	int c;
-	while (c = *s++) h = ((h << 5) + h) + c;
+	while (c = *s++) h = h * 33 + c;
 	string temp = to_string(h);
 	char* hash = new char[HASH_SIZE] {0};
-	for (int i = 0; i < temp.size(); i++) hash[i] = temp[i];
+	for (int i = 0; i < temp.size(); i++) {
+		if (i == HASH_SIZE - 1)
+		{
+			break;
+		}
+		hash[i] = temp[i];
+	}
 	return hash;
 }
 

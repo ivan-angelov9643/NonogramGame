@@ -1,13 +1,11 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <map>
-#include "Header.h"
-#include <set>
+#include "globals.h"
+#include "functions.h"
 
 using namespace std;
 
-//delete arrays !!!!
 int main()
 {
 	bool isLoggedIn = false;
@@ -18,6 +16,14 @@ int main()
 		if (exit)
 		{
 			delete[] user;
+			for (int i = 0; i < LEVELS; i++)
+			{
+				for (int j = 0; j < 2; j++)
+				{
+					delete[] PICTURES_FILES_NAMES[i][j];
+				}
+			}
+			delete[] PICTURES_FILES_NAMES;
 			return 0;
 		}
 		if (!isLoggedIn)
@@ -72,7 +78,10 @@ void loggedIn(bool& loggedIn, char* user) {
 			inGamePicture = continueGame(user, fileName, gameFinished, won, lives);
 			if (gameFinished) {
 				deleteLastGameSave(user);
-				if (won && userLevel(user) != 3) levelUp(user);
+				if (won && userLevel(user) != 3) {
+					levelUp(user);
+					cout << "Level up to lvl 2" << endl;
+				}
 				delete[] fileName;
 				delete[] inGamePicture;
 				inGamePicture = nullptr;
@@ -121,7 +130,11 @@ char** continueGame(char* user, char*& fileName, bool& gameFinished, bool& won, 
 		fileName[i] = buffer[i];
 	}
 	userLastGameFile.getline(buffer, LINE_SIZE);
-	int size = stringSize(buffer) == 1 ? buffer[0] - '0' : ((buffer[0] - '0') * 10 + (buffer[1] - '0'));
+	int size = 0;
+	if (LINE_SIZE >= 2)
+	{
+		size = stringSize(buffer) == 1 ? buffer[0] - '0' : ((buffer[0] - '0') * 10 + (buffer[1] - '0'));
+	}
 	userLastGameFile.getline(buffer, LINE_SIZE);
 	lives = buffer[0] - '0';
 	for (int i = 0; i < size; i++)
@@ -184,7 +197,7 @@ void Play(char* user, char** solvedPicture, char** inGamePicture, int** rows, in
 	cout << "0 - back" << endl;
 	int i, j;
 	char action;
-	set<int> markedRows = {};
+	bool* markedRows = new bool[SIZE] {0};
 	while (!gameFinished)
 	{
 		printPicture(inGamePicture, rows, cols, size);
@@ -210,11 +223,22 @@ void Play(char* user, char** solvedPicture, char** inGamePicture, int** rows, in
 		bool markRow = true;
 		bool markCol = true;
 		MarkRowAndColIfFilled(i, j, solvedPicture, inGamePicture, size, markRow, markCol);
-		if (markRow) markedRows.insert(i);
-		if (markedRows.size() == size) won = true;
+		if (markRow) markedRows[i] = true;
+		if (AllRowsAreMarked(markedRows, size)) won = true;
 	}
 	if (!won) cout << "Game Over!" << endl;
 	if (won) cout << "You won!" << endl;
+}
+
+bool AllRowsAreMarked(bool* markedRows, int size) {
+	for (int i = 0; i < size; i++)
+	{
+		if (!markedRows[i])
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 void MarkRowAndColIfFilled(int i, int j, char** solvedPicture, char** inGamePicture, int size, bool& markRow, bool& markCol) {
@@ -238,11 +262,19 @@ void printPicture(char** picture, int** rows, int** cols, int size) {
 	int maxSizeCol = maxSubarraySize(cols, size);
 	for (int i = maxSizeCol - 1; i >= 0; i--)
 	{
-		for (int i = 0; i < maxSizeRow + 1; i++) cout << ' ';
+		for (int i = 0; i < 2 * maxSizeRow + 1; i++) cout << ' ';
 		for (int j = 0; j < size; j++)
 		{
-			if (cols[j][i] == 0) cout << ' ';
-			else cout << cols[j][i];
+			if (cols[j][i] == 0) {
+				cout << "  ";
+			}
+			else if (cols[j][i] >= 10)
+			{
+				cout << cols[j][i];
+			}
+			else {
+				cout << cols[j][i] << ' ';
+			}
 		}
 		cout << endl;
 	}
@@ -251,13 +283,21 @@ void printPicture(char** picture, int** rows, int** cols, int size) {
 	{
 		for (int j = maxSizeRow - 1; j >= 0; j--)
 		{
-			if (rows[i][j] == 0) cout << ' ';
-			else cout << rows[i][j];
+			if (rows[i][j] == 0) {
+				cout << "  ";
+			}
+			else if (rows[i][j] >= 10)
+			{
+				cout << rows[i][j];
+			}
+			else {
+				cout << rows[i][j] << ' ';
+			}
 		}
 		cout << ' ';
 		for (int j = 0; j < size; j++)
 		{
-			cout << picture[i][j];
+			cout << picture[i][j] << ' ';
 		}
 		cout << endl;
 	}
@@ -265,8 +305,12 @@ void printPicture(char** picture, int** rows, int** cols, int size) {
 
 char* notLoggedIn(bool& loggedIn, bool& exit) {
 	cout << "Welcome to Nonogram!" << endl;
-	map<char*, char*> profiles;
-	profiles = loadProfiles(profiles);
+	char*** profiles = new char** [MAX_PROFILES];
+	for (int i = 0; i < MAX_PROFILES; i++)
+	{
+		profiles[i] = new char* [PROFILE_INFORMATION_PIECES];
+	}
+	loadProfiles(profiles);
 	char* choice = new char[INPUT_SIZE];
 	bool success = false;
 	char* user = nullptr;
@@ -293,14 +337,17 @@ char* notLoggedIn(bool& loggedIn, bool& exit) {
 			break;
 		}
 	}
-	loggedIn = true; 
+	loggedIn = true;
 
-	map<char*, char*>::iterator it;
-	for (it = profiles.begin(); it != profiles.end(); it++)
+	for (int i = 0; i < MAX_PROFILES; i++)
 	{
-		delete[] it->first;
-		delete[] it->second;
+		for (int j = 0; j < 2; j++)
+		{
+			delete[] profiles[i][j];
+		}
+		delete[] profiles[i];
 	}
+	delete[] profiles;
 	delete[] choice;
 	return user;
 }
@@ -333,7 +380,7 @@ char* choosePictureFile(int lvl) {
 	char* fileName = new char[FILENAME_SIZE];
 	for (int i = 0; i < FILENAME_SIZE; i++)
 	{
-		fileName[i] = PICTURES_FILES_NAMES.at(lvl)[ind][i];
+		fileName[i] = PICTURES_FILES_NAMES[lvl - 1][ind][i];
 	}
 	return fileName;
 }
