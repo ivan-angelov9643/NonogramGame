@@ -308,7 +308,7 @@ char* notLoggedIn(bool& loggedIn, bool& exit) {
 	char*** profiles = new char** [MAX_PROFILES];
 	for (int i = 0; i < MAX_PROFILES; i++)
 	{
-		profiles[i] = new char* [PROFILE_INFORMATION_PIECES];
+		profiles[i] = new char* [PROFILE_INFORMATION_PIECES] {nullptr};
 	}
 	loadProfiles(profiles);
 	char* choice = new char[INPUT_SIZE];
@@ -341,9 +341,9 @@ char* notLoggedIn(bool& loggedIn, bool& exit) {
 
 	for (int i = 0; i < MAX_PROFILES; i++)
 	{
-		for (int j = 0; j < 2; j++)
+		for (int j = 0; j < PROFILE_INFORMATION_PIECES; j++)
 		{
-			delete[] profiles[i][j];
+			delete[] profiles[i][j]; // fix it
 		}
 		delete[] profiles[i];
 	}

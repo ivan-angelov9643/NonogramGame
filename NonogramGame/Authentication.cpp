@@ -60,6 +60,7 @@ bool registerProfile(char*** profiles, char** user) {
 		if (!isValid(username, "Username")) {
 			continue;
 		}
+		int s = stringSize(username);
 		if (usernameExists(profiles, username, stringSize(username), nullptr))
 		{
 			cout << "Username already exists" << endl;
@@ -123,6 +124,10 @@ bool usernameExists(char*** profiles, char* username, int size, char** passwordH
 	bool exists;
 	for (int i = 0; i < MAX_PROFILES; i++)
 	{
+		if (profiles[i][0] == nullptr)
+		{
+			break;
+		}
 		char* currentUsername = profiles[i][0];
 		int currentUsernameSize = stringSize(currentUsername);
 		int biggerSize = size > currentUsernameSize ? size : currentUsernameSize;
