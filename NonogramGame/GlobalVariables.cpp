@@ -12,17 +12,17 @@ const int FILENAME_SIZE = 20;
 const int LIVES = 3;
 const int PROFILE_INFORMATION_PIECES = 2;
 const int LEVELS = 3;
-const char*** PICTURES_FILES_NAMES = new const char** [LEVELS]{
+const char*** PICTURES_FILES_NAMES = new const char** [LEVELS] {
 	new const char* [2] {
-   new const char[FILENAME_SIZE] { "5x5picture1.txt" },
-   new const char[FILENAME_SIZE] { "5x5picture2.txt" }
-   },
-	new const char* [2] {
-   new const char[FILENAME_SIZE] { "10x10picture1.txt" },
-   new const char[FILENAME_SIZE] { "10x10picture2.txt" }
-   },
-	new const char* [2] {
-   new const char[FILENAME_SIZE] { "15x15picture1.txt" },
-   new const char[FILENAME_SIZE] { "15x15picture2.txt" }
-   }
+		new const char[FILENAME_SIZE] { "5x5picture1.txt" },
+			new const char[FILENAME_SIZE] { "5x5picture2.txt" }
+	},
+		new const char* [2] {
+			new const char[FILENAME_SIZE] { "10x10picture1.txt" },
+				new const char[FILENAME_SIZE] { "10x10picture2.txt" }
+		},
+			new const char* [2] {
+				new const char[FILENAME_SIZE] { "15x15picture1.txt" },
+					new const char[FILENAME_SIZE] { "15x15picture2.txt" }
+			}
 };

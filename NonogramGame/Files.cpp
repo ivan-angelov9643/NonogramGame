@@ -122,3 +122,40 @@ void deleteLastGameSave(char* user) {
 	}
 }
 
+bool readContinueGameFile(char* user, int& size, char*& fileName, int& lives, char** inGamePicture) {
+	fstream userLastGameFile;
+	userLastGameFile.open(string(user) + "LastGame.txt", fstream::in);
+	if (!userLastGameFile.is_open())
+	{
+		cout << "There is no last game save" << endl;
+		return false;
+	}
+	char* buffer = new char[LINE_SIZE] {0};
+	userLastGameFile.getline(buffer, LINE_SIZE);
+	fileName = new char[LINE_SIZE] {0};
+	for (int i = 0; i < LINE_SIZE; i++)
+	{
+		if (buffer[i] == 0) break;
+		fileName[i] = buffer[i];
+	}
+	userLastGameFile.getline(buffer, LINE_SIZE);
+	if (LINE_SIZE >= 2)
+	{
+		size = stringSize(buffer) == 1 ? buffer[0] - '0' : ((buffer[0] - '0') * 10 + (buffer[1] - '0'));
+	}
+	userLastGameFile.getline(buffer, LINE_SIZE);
+	lives = buffer[0] - '0';
+	for (int i = 0; i < size; i++)
+	{
+		userLastGameFile.getline(buffer, LINE_SIZE);
+		for (int j = 0; j < size; j++)
+		{
+			if (LINE_SIZE > 1)
+			{
+				inGamePicture[i][j] = buffer[j];
+			}
+		}
+	}
+	delete[] buffer;
+	return true;
+}

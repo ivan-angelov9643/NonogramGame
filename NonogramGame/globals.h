@@ -1,6 +1,3 @@
-//#ifndef GLOBALS_H
-//#define GLOBALS_H
-
 extern const int LINE_SIZE;
 extern const int INPUT_SIZE;
 extern const int HASH_SIZE;
@@ -14,5 +11,3 @@ extern const int LIVES;
 extern const int PROFILE_INFORMATION_PIECES;
 extern const char*** PICTURES_FILES_NAMES;
 extern const int LEVELS;
-
-//#endif

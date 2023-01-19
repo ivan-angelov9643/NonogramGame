@@ -127,6 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="HelperFuncitonscpp.cpp" />
     <ClCompile Include="NonogramGame.cpp" />
     <ClCompile Include="Authentication.cpp" />
     <ClCompile Include="Files.cpp" />
