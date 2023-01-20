@@ -1,3 +1,18 @@
+/**
+*
+* Solution to course project # 1
+* Introduction to programming course
+* Faculty of Mathematics and Informatics of Sofia University
+* Winter semester 2022/2023
+*
+* @author Ivan Angelov
+* @idnumber 9MI0600190
+* @compiler VC
+*
+* header file with functions declarations
+*
+*/
+
 extern void readPictureFile(int**, int**, char**, int, char*);
 extern int userLevel(char*);
 extern void loadProfiles(char***);

@@ -1,3 +1,18 @@
+/**
+*
+* Solution to course project # 1
+* Introduction to programming course
+* Faculty of Mathematics and Informatics of Sofia University
+* Winter semester 2022/2023
+*
+* @author Ivan Angelov
+* @idnumber 9MI0600190
+* @compiler VC
+*
+* cpp file with functions working with files
+*
+*/
+
 #include <iostream>
 #include <fstream>
 #include <string>
