@@ -15,7 +15,6 @@ int main()
 	{
 		if (exit)
 		{
-			delete[] user;
 			for (int i = 0; i < LEVELS; i++)
 			{
 				for (int j = 0; j < 2; j++)
@@ -34,6 +33,7 @@ int main()
 		else
 		{
 			loggedIn(isLoggedIn, user);
+			delete[] user;
 		}
 	}
 }
@@ -123,6 +123,10 @@ void loggedIn(bool& loggedIn, char* user) {
 					cout << "Level up to lvl " << userLvl << endl;
 				}
 				delete[] fileName;
+				for (int i = 0; i < SIZE; i++)
+				{
+					delete[] inGamePicture[i];
+				}
 				delete[] inGamePicture;
 				inGamePicture = nullptr;
 			}
@@ -137,6 +141,10 @@ void loggedIn(bool& loggedIn, char* user) {
 					cout << "Level up to lvl " << userLvl << endl;
 				}
 				delete[] fileName;
+				for (int i = 0; i < SIZE; i++)
+				{
+					delete[] inGamePicture[i];
+				}
 				delete[] inGamePicture;
 				inGamePicture = nullptr;
 			}
@@ -248,7 +256,15 @@ void play(char* user, char** solvedPicture, char** inGamePicture, int** rows, in
 		cin >> action;
 		if (action == '0') return;
 		cin >> i >> j;
-		if (!validateInput(action, i, j, size)) continue;
+		if (cin.fail()) {
+			cout << "Coordinates must be integers" << endl;
+			cin.clear();
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			continue;
+		}
+		if (!validateInput(action, i, j, size)) {
+			continue;
+		}
 		if (action == 'f' && solvedPicture[i][j] == '.' || action == 'e' && solvedPicture[i][j] == '#')
 		{
 			cout << "Wrong!" << endl;

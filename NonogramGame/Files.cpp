@@ -49,6 +49,7 @@ void readPictureFile(int** rows, int** cols, char** picture, int pictureSize, ch
 			j++;
 		}
 	}
+	currentArray = nullptr;
 	pictureFile.close();
 }
 

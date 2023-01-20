@@ -7,9 +7,13 @@
 using namespace std;
 
 void loadProfiles(char*** profiles) {
+	ifstream file(PROFILES_FILE_NAME);
+	if (!file.good()) {
+		file.close();
+		ofstream(PROFILES_FILE_NAME).close();
+	}
 	fstream profilesFile;
-	profilesFile.open(PROFILES_FILE_NAME, std::fstream::in);
-
+	profilesFile.open(PROFILES_FILE_NAME, fstream::in);
 	if (!profilesFile.is_open()) {
 		cout << "Error opening file" << endl;
 		return;
@@ -41,6 +45,7 @@ void loadProfiles(char*** profiles) {
 		profiles[profilesIndex][1] = passwordHash;
 		profilesIndex++;
 	}
+	profilesFile.close();
 	delete[] buffer;
 }
 

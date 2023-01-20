@@ -34,7 +34,8 @@ void fillInGamePicture(char** picture, int size) {
 bool validateInput(char action, int i, int j, int size) {
 	if (action != 'f' && action != 'e')
 	{
-		cout << "Action must be \'a\' or \'e\'";
+		cout << "Action must be \'f\' or \'e\'" << endl;
+		return false;
 	}
 	if (i < 0 || i >= size || j < 0 || j >= size)
 	{
